@@ -1,0 +1,199 @@
+---
+title: "Midterm Exam - Individual Part"
+format: docx
+editor: visual
+---
+
+## #BANL6900
+
+#Midterm Exam - Individual Part
+
+#Complete this part on your own. Sharing your work or receiving someone's work will be penalized. When done, save this document and then Render it to produce a Word document.
+
+#Submit both this file (.qmd) and Word file on Canvas.
+
+## #NAME: Sumukh. Ramagiri
+
+## #Questions
+
+#Run the following code to read a dataset. This dataset is about healthcare management. The dataset provides information about 5000 patients.
+
+```{r readdata, message=FALSE}
+#| echo: false
+setwd("/Users/sumukhramagiri/Downloads")
+library(readr)
+
+d = read_csv("healthcare2 (1).csv")
+```
+
+1\) Inspect the data and write two questions (one normal and one unusual) that can be answered using this dataset. Make sure your questions are non-trivial. For example, what is the mean BMI is trivial, too simple. Consider relationships between at least two variables, or influential factors (more than two variables).
+
+HINT:
+
+**Normal questions -\> questions related to diseases**
+
+What is the impact of age and heart disease on the likelihood of having a stroke, considering different BMI categories as a moderating factor?
+
+This question seeks to understand the interplay between age, pre-existing heart conditions, and body mass index (BMI) on stroke incidence. It hypothesizes that older individuals with heart disease in certain BMI categories (either underweight, normal, overweight, or obese) may exhibit different risks of experiencing a stroke. This question can help us reveal critical insights into how age and heart conditions, when combined with nutritional status as indicated by BMI, affect stroke risk.
+
+**Unusual questions -\> questions related to anything other than diseases**
+
+Does the average glucose level vary significantly between different work types within the subset of individuals who have never smoked, and how does this variation compare between those with and without hypertension?
+
+This question aims to explore the relationship between occupational stress or activity levels (inferred from work type) and metabolic health (as indicated by average glucose levels) in a population that has eliminated the confounding factor of smoking. Furthermore, it examines whether hypertension status alters this relationship, suggesting that blood pressure control may interact with occupational factors and metabolic health in a nuanced manner. This approach takes a less direct path to understanding health outcomes, focusing on metabolic indicators across lifestyle and health conditions.
+
+2\) Explain how you can answer your questions identified in Question-1. Write some R code below (if possible) to answer them. If the R code is to be too long or difficult, just explain your method in your own words.
+
+```{r Question-2, message=FALSE}
+#| echo: false
+# R Code to answer the questions identified
+#we need to make sure the dataset cleaned
+#normal question code below:
+
+# Handling missing values for BMI - Example strategy, replace with mean/median or use imputation methods
+d$bmi[is.na(d$bmi)] <- median(d$bmi, na.rm = TRUE)
+
+# Categorizing BMI into groups
+d$bmi_category <- cut(d$bmi,
+                          breaks = c(-Inf, 18.5, 24.9, 29.9, Inf),
+                          labels = c("Underweight", "Normal", "Overweight", "Obese"))
+
+# Logistic regression to assess the impact of age, heart disease, and BMI category on stroke likelihood
+model <- glm(stroke ~ age + heart_disease + bmi_category + age:heart_disease,
+             family = binomial(link = "logit"), data = d)
+
+# Summarize the model
+summary(model)
+#from the summary I learned that the output of the logistic regression model provides several key insights into the factors affecting the likelihood of having a stroke, based on age, heart disease presence, BMI categories, and the interaction between age and heart disease. 
+
+#unusal question code below:
+
+
+#Filtering the dataset for non-smokers
+non_smokers <- d[d$smoking_status == "never smoked",]
+
+#Conduct linear regression
+
+
+# For linear regression (to see the interaction between work type and hypertension)
+lm_model <- lm(avg_glucose_level ~ work_type * hypertension, data = non_smokers)
+summary(lm_model)
+
+#from this question analysis it provides insights into how occupational factors and health conditions interact to affect metabolic health, specifically in the context of average glucose levels, in a population subset that excludes the potential confounding effect of smoking.
+
+```
+
+3\) Are there any missing data in the dataset? Which columns are affected? Suggest a method to handle the missing data issue. Write the R code to handle the missing value problem below. HINT: summary()
+
+```{r Question-3, message=FALSE}
+#| echo: false
+# R Code to answer the Question-3
+
+# Identifying the missing values in the dataset
+missing_values_summary <- colSums(is.na(d))
+print(missing_values_summary)
+#from the output it is observed that the column health bills has the missing values.
+
+#Handling the missing values in health bills
+
+# Impute missing 'health_bills' values with the median
+d$health_bills[is.na(d$health_bills)] <- median(d$health_bills, na.rm = TRUE)
+
+#checking the missing values after imputation
+
+sum(is.na(d$health_bills))
+
+#we have cleared the missing values
+
+
+```
+
+4\) Run the following code to generate a visualization. Now comment on what you see in this scatter plot.
+
+```{r Question-4}
+#| echo: false
+# Run the following code to answer Question-4
+library(ggplot2)
+library(dplyr)
+
+
+d %>% filter(smoking_status != "Unknown" & gender != "Other") %>%
+     ggplot() +
+        geom_point( aes(y=health_bills, x=bmi, color =as.factor(stroke), size=as.factor(heart_disease) ), alpha = 0.20 ) 
+
+#here are my 5 observations from the scatter plot
+
+#BMI Distribution: The data points are spread across a range of BMI values, with a concentration of points in the lower BMI range. There are fewer data points with higher BMI values, which is typical as fewer individuals have very high BMI.As we know that in general most people have similar bmi unless some are abnormally tall / short or thin or obese.
+
+#Health Bills: The health_bills variable is plotted on the y-axis, and it appears to cover a wide range. There's a noticeable density of data points at the lower end of the health bill spectrum, indicating that many individuals have lower health-related expenses.As from the dataset we can state that the set of people which may be from particular region have a healthier lifestyle.
+
+#Heart Disease and Stroke Representation: The colors and sizes of the points indicate whether individuals have heart disease (gray for no, blue for yes) and whether they have had a stroke (light red for no, light blue for yes). It seems that individuals without heart disease or stroke (light red, smaller points) are the most common in the dataset.
+
+#Correlation Trends: There doesn't appear to be a clear trend or correlation between BMI and health bills based on this plot. The data points are quite spread out, indicating variability in health bills that isn't strongly associated with BMI.By which we can say that BMI is not a primary factor to show the health expenses or the cause for health expense.
+
+#Outliers: There are some outliers with very high health bills, especially in the group with heart disease and/or stroke. This could be expected, as these conditions typically lead to higher medical expenses as we know that in these cases highly professional care needs to be taken care of the patients which results in higher the health bills.
+
+
+```
+
+5\) Assume that your company sells a product that helps people quit smoking. You will target a specific group of smoking people in your advertisements. Explain how you could identify characteristics of this people (age, gender, etc.). For example, which gender is the majority of the smoking people? Mostly married, or single? What is the majority age group of smoking people? Do calculations, tables or visualizations to support your explanation.
+
+```{r Question-5}
+#| echo: false
+
+d$smoking_status = factor(d$smoking_status, levels = c("never smoked", "formerly smoked", "smokes", "Unknown"))
+table(d$smoking_status)
+
+# Your code goes below
+## By using 'gender' and 'smoking_status' are columns from the dataset 'd'
+table(d$gender, d$smoking_status)
+
+#from the table we see that female has the higher number in all the columns"never smoked" "formely smoked " "smokes " "Unknown".
+
+# By using 'ever_married' as a column from the dataset 'd'
+table(d$ever_married, d$smoking_status)
+# from the table we see that married people has the higher number in the columns"never smoked" "formely smoked " "smokes ". Only the "unknown" column has the higher number of not married people.
+
+#age distribution of smokers
+# Creating the age groups from the dataset d
+d$age_group <- cut(d$age, breaks = c(18, 30, 45, 60, Inf), labels = c("18-30", "31-45", "46-60", "61+"))
+
+# Table of age groups against smoking status
+table(d$age_group, d$smoking_status)
+
+#from the output we see that age group 61+ has highest no.of "never smoked" as well as "formely smoked" in the dataset d
+#we can see that the age group of 46- 60 has highest no.of acive smokers
+
+#let's visualize the observations.
+library(ggplot2)
+
+# Plotting gender distribution among smokers
+ggplot(d[d$smoking_status == "smokes", ], aes(x = gender)) +
+  geom_bar() +
+  labs(title = "Gender Distribution among Smokers")
+
+#from the plot we see that female are higher among smokers
+
+# Plotting marital status distribution among smokers
+ggplot(d[d$smoking_status == "smokes", ], aes(x = ever_married)) +
+  geom_bar() +
+  labs(title = "Marital Status Distribution among Smokers")
+
+
+# we can see that married people are higher among smokers.
+
+# Plotting age distribution among smokers
+ggplot(d[d$smoking_status == "smokes", ], aes(x = age_group)) +
+  geom_bar() +
+  labs(title = "Age Distribution among Smokers")
+
+#we see that age group 46- 60 has the highest among sokers.
+
+
+
+
+```
+
+\_\_\_\_\_\_ End of the Exam \_\_\_\_\_
+
+NOW render this file to get a Word document. Edit the Word document to look like a business report. Then, submit both this .qmd file and the Word document on Canvas.
